@@ -35,14 +35,16 @@ jobs:
       # One image failing its check must not hold back the other: the base image
       # carries the 30-day runner version clock for the gVisor profile.
       fail-fast: false
+      # The description becomes the package page's text on GHCR, next to the README.
+      # Both are public: they describe the image, not where it runs.
       matrix:
         include:
           - target: base
             image: ghcr.io/rgielen/actions-runner-nuc01
-            description: GitHub Actions runner for the ARC scale sets on nuc01
+            description: GitHub Actions runner image, the upstream runner plus gcc, make and zstd
           - target: docker
             image: ghcr.io/rgielen/actions-runner-nuc01-docker
-            description: GitHub Actions runner for the Docker profile on nuc01 (Kata + dind), with GraalVM in the tool cache
+            description: GitHub Actions runner image with Oracle GraalVM in the tool cache
     env:
       IMAGE: ${{ matrix.image }}
     timeout-minutes: 20

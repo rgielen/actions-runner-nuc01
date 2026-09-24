@@ -1,12 +1,12 @@
 # Builds the two runner images, checks each, and on main pushes and signs them.
 # One matrix leg per Dockerfile target:
 #
-#   base    ghcr.io/rgielen/actions-runner-nuc01          profile nuc01 (gVisor)
-#   docker  ghcr.io/rgielen/actions-runner-nuc01-docker   profile nuc01-docker (Kata + dind)
+#   base    ghcr.io/rgielen/actions-runner-nuc01          upstream runner plus gcc, make, zstd
+#   docker  ghcr.io/rgielen/actions-runner-nuc01-docker   base plus GraalVM in the tool cache
 #
 # One workflow file for both keeps one cosign identity (build.yml@refs/heads/main).
 #
-# Runs on GitHub-hosted runners, never on the scale sets this image is for: a
+# Runs on GitHub-hosted runners, never on the self-hosted runners this image is for: a
 # broken image must not be the thing that has to build its own replacement,
 # and this repository is public, so its minutes cost nothing.
 name: build
@@ -32,8 +32,8 @@ jobs:
     name: build (${{ matrix.target }})
     runs-on: ubuntu-24.04
     strategy:
-      # One image failing its check must not hold back the other: the base image
-      # carries the 30-day runner version clock for the gVisor profile.
+      # One image failing its check must not hold back the other: each has GitHub's
+      # 30-day runner version clock to keep on its own.
       fail-fast: false
       # The description becomes the package page's text on GHCR, next to the README.
       # Both are public: they describe the image, not where it runs.
@@ -109,8 +109,8 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # Same build again, from the cache, so what is pushed is what was checked.
-      # One tag only, the runner version: k3s-nuc pins tag AND digest, so a
-      # monthly rebuild reaches it as a digest update of the same tag, and a
+      # One tag only, the runner version: consumers pin tag AND digest, so a
+      # monthly rebuild reaches them as a digest update of the same tag, and a
       # second, date-stamped tag would only give Renovate two version schemes
       # to confuse.
       - name: Push

@@ -5,7 +5,7 @@
   "automergeStrategy": "rebase",
   "packageRules": [
     {
-      "description": "The base image automerges at every level short of a major, and without a schedule. GitHub refuses jobs to a runner more than 30 days behind the current release, and ARC registers runners with self-update disabled, so a bump that waits for a human is a countdown to the scale sets on nuc01 going quiet. The gate is the build workflow: the image is built and checked (tools, uid, runner version, a cgo compile) before Renovate may merge. From there k3s-nuc takes over, with its own pull request for the new tag and digest.",
+      "description": "The base image automerges at every level short of a major, and without a schedule. GitHub refuses jobs to a runner more than 30 days behind the current release, and ARC registers runners with self-update disabled, so a bump that waits for a human is a countdown to the runners going quiet. The gate is the build workflow: the image is built and checked (tools, uid, runner version, a cgo compile) before Renovate may merge. From there the consumers take over, with their own pull requests for the new tag and digest.",
       "matchPackageNames": ["ghcr.io/actions/actions-runner"],
       "matchUpdateTypes": ["minor", "patch", "digest"],
       "automerge": true

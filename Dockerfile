@@ -1,8 +1,7 @@
-# The runner images for the ARC scale sets on nuc01 (rgielen/k3s-nuc, issue #107).
-# Two images from one FROM line, built as two targets of this file:
+# Two runner images from one FROM line, built as two targets of this file:
 #
-#   base    ghcr.io/rgielen/actions-runner-nuc01          profile nuc01 (gVisor, no Docker)
-#   docker  ghcr.io/rgielen/actions-runner-nuc01-docker   profile nuc01-docker (Kata + dind)
+#   base    ghcr.io/rgielen/actions-runner-nuc01          upstream runner plus gcc, make, zstd
+#   docker  ghcr.io/rgielen/actions-runner-nuc01-docker   base plus GraalVM in the tool cache
 #
 # One FROM line for both on purpose: one Renovate bump rebuilds both, so neither can fall
 # behind GitHub's 30-day runner version clock on its own.
@@ -15,7 +14,7 @@
 FROM ghcr.io/actions/actions-runner:2.337.0@sha256:e5496277be5d09bc968b3d64911b74e219ac4a3f2edce956a3ecf9271bea1ef4 AS base
 
 # Upstream's image carries the runner, git, curl, jq, unzip and the Docker CLI with
-# buildx, and nothing that compiles. The jobs moved onto nuc01 need four things more:
+# buildx, and nothing that compiles. The jobs this image is for need four things more:
 #
 #   gcc, libc6-dev  go test -race needs cgo, and cgo needs a C compiler and the
 #                   libc headers. Without them -race fails with "cgo: C compiler
@@ -24,11 +23,12 @@ FROM ghcr.io/actions/actions-runner:2.337.0@sha256:e5496277be5d09bc968b3d64911b7
 #   zstd            actions/cache compresses with zstd when it finds the binary
 #                   and falls back to gzip when it does not. The compression
 #                   method is part of the cache version, so a gzip cache and a
-#                   zstd cache under the same key never match: without zstd the
-#                   two runner kinds would miss each other's caches both ways.
+#                   zstd cache under the same key never match: without zstd,
+#                   hosted and self-hosted runners would miss each other's
+#                   caches both ways.
 #
 # Nothing else goes into this stage. Every tool added here is present in every job of
-# every repository the scale sets serve, for as long as it stays; a language runtime
+# every repository that runs on this image, for as long as it stays; a language runtime
 # belongs in the workflow's setup-* step, which pins it there. The one exception is the
 # docker stage below, and why it is one is written there.
 USER root
@@ -46,18 +46,16 @@ USER 1001:1001
 
 FROM base AS docker
 
-# GraalVM for the Docker profile, pre-installed in the tool cache.
+# GraalVM, pre-installed in the tool cache.
 #
-# WHY A RUNTIME IN THE IMAGE, against the rule above. The profile's main job is the
-# backend's `verify`, which runs actions/setup-java with GraalVM 25 in every job. On a
-# hosted runner that JDK comes out of the Actions cache at 100+ MB/s; on nuc01 every job
-# would pull 380 MB over the home line (11.6 MB/s). The Docker profile serves a handful
-# of Java jobs and nothing else, so here the trade goes the other way. Decided with O7
-# in rgielen/k3s-nuc#107; design record: docs/actions-runner/docker-profile.adoc there.
+# WHY A RUNTIME IN THE IMAGE, against the rule above. The jobs this image is for run
+# actions/setup-java with GraalVM 25 every time. A GitHub-hosted runner gets that JDK
+# from a fast cache; a self-hosted runner downloads 380 MB in every job. This image
+# serves a handful of Java jobs and nothing else, so here the trade goes the other way.
 #
 # WHERE, and why not under the work directory. The runner puts its tool cache in
-# _work/_tool unless RUNNER_TOOL_CACHE says otherwise, and in the scale set _work is an
-# emptyDir that hides whatever the image had there. /opt/hostedtoolcache is where
+# _work/_tool unless RUNNER_TOOL_CACHE says otherwise, and _work is commonly a fresh
+# volume (an emptyDir under ARC) that hides whatever the image had there. /opt/hostedtoolcache is where
 # GitHub's own images keep it. Owned by 1001, so other setup-* actions can still add
 # tools in a job.
 #
@@ -67,8 +65,7 @@ FROM base AS docker
 # jvmci-b01" -> "25.0.4+7"), and the tool cache writes the "+" as "-". Read back, the
 # directory is found for an exact `java-version: '25.0.4'`. For a bare '25', setup-java
 # v6 asks Oracle first and uses the tool cache only once its resolution cache maps the
-# download to this version (graalvm/installer.ts, requiresRemoteResolution) -- the
-# design record has the details.
+# download to this version (graalvm/installer.ts, requiresRemoteResolution).
 #
 # No Renovate datasource exists for Oracle GraalVM (setup-java's own comment: no
 # endpoint to list releases). Version and checksum are moved by hand, and Oracle's

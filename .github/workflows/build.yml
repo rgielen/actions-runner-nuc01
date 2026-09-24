@@ -79,6 +79,12 @@ jobs:
           platforms: linux/amd64
           load: true
           tags: local/actions-runner-nuc01:check
+          # The monthly run exists for the Ubuntu security updates in the apt layer,
+          # and a cached layer would carry last month's packages forward unchanged
+          # (Copilot review of #3). On schedule the check build therefore imports no
+          # cache; it still exports one, and the push below builds from that fresh
+          # cache -- so what is pushed is still what was checked.
+          no-cache: ${{ github.event_name == 'schedule' }}
           # One cache scope per target, or the two legs overwrite each other's cache.
           cache-from: type=gha,scope=${{ matrix.target }}
           cache-to: type=gha,scope=${{ matrix.target }},mode=max

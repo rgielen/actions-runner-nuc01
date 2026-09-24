@@ -7,8 +7,12 @@ scale sets, one ephemeral pod per job, under gVisor, without Docker and without
 access to the cluster or the LAN.
 
 ```
-ghcr.io/rgielen/actions-runner-nuc01:<runner version>
+ghcr.io/rgielen/actions-runner-nuc01:<runner version>          profile nuc01 (gVisor, no Docker)
+ghcr.io/rgielen/actions-runner-nuc01-docker:<runner version>   profile nuc01-docker (Kata + dind)
 ```
+
+Both come from the same `FROM` line as two targets of one [Dockerfile](Dockerfile),
+so one runner bump moves both.
 
 ## What is in it
 
@@ -20,6 +24,15 @@ with `runAsNonRoot`.
 `sudo` is still in the base image and does not work: the pods run with
 `allowPrivilegeEscalation: false`. A job that needs a package installs it
 without root, or gets it into this image by pull request.
+
+`actions-runner-nuc01-docker` adds Oracle GraalVM 25 in the tool cache
+(`RUNNER_TOOL_CACHE=/opt/hostedtoolcache`), where `actions/setup-java` finds it
+instead of downloading 380 MB per job over nuc01's home line. It is found without
+any network call for an exact `java-version` (`'25.0.4'`); with a bare `'25'`,
+setup-java v6 resolves against Oracle first (checked 2026-09-24 against v6.0.1).
+The Docker daemon itself is not in the image: it runs as a `docker:dind` sidecar
+of the runner pod, inside a Kata micro-VM. GraalVM's version and checksum are
+moved by hand -- there is no Renovate datasource for it.
 
 ## How it moves
 

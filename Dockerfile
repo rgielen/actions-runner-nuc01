@@ -11,7 +11,7 @@
 # release, and ARC registers runners with self-update off, so this line has to move
 # within that window. Renovate moves it (renovate.json) and automerges the bump once the
 # build is green.
-FROM ghcr.io/actions/actions-runner:2.337.0@sha256:e5496277be5d09bc968b3d64911b74e219ac4a3f2edce956a3ecf9271bea1ef4 AS base
+FROM ghcr.io/actions/actions-runner:2.338.0@sha256:4ffadc0002b2581327e06101fc8c06cd189232baf79fe561fac9caeb76f5e807 AS base
 
 # Upstream's image carries the runner, git, curl, jq, unzip and the Docker CLI with
 # buildx, and nothing that compiles. The jobs this image is for need four things more:

@@ -1,7 +1,7 @@
 # Builds the two runner images, checks each, and on main pushes and signs them.
 # One matrix leg per Dockerfile target:
 #
-#   base    ghcr.io/rgielen/actions-runner-nuc01          upstream runner plus gcc, make, zstd
+#   base    ghcr.io/rgielen/actions-runner-nuc01          upstream runner plus gcc, make, zstd, envsubst
 #   docker  ghcr.io/rgielen/actions-runner-nuc01-docker   base plus GraalVM in the tool cache
 #
 # One workflow file for both keeps one cosign identity (build.yml@refs/heads/main).
@@ -41,7 +41,7 @@ jobs:
         include:
           - target: base
             image: ghcr.io/rgielen/actions-runner-nuc01
-            description: GitHub Actions runner image, the upstream runner plus gcc, make and zstd
+            description: GitHub Actions runner image, the upstream runner plus gcc, make, zstd and envsubst
           - target: docker
             image: ghcr.io/rgielen/actions-runner-nuc01-docker
             description: GitHub Actions runner image with Oracle GraalVM in the tool cache

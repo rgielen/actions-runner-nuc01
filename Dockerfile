@@ -1,6 +1,6 @@
 # Two runner images from one FROM line, built as two targets of this file:
 #
-#   base    ghcr.io/rgielen/actions-runner-nuc01          upstream runner plus gcc, make, zstd
+#   base    ghcr.io/rgielen/actions-runner-nuc01          upstream runner plus gcc, make, zstd, envsubst
 #   docker  ghcr.io/rgielen/actions-runner-nuc01-docker   base plus GraalVM in the tool cache
 #
 # One FROM line for both on purpose: one Renovate bump rebuilds both, so neither can fall
@@ -14,7 +14,7 @@
 FROM ghcr.io/actions/actions-runner:2.338.0@sha256:4ffadc0002b2581327e06101fc8c06cd189232baf79fe561fac9caeb76f5e807 AS base
 
 # Upstream's image carries the runner, git, curl, jq, unzip and the Docker CLI with
-# buildx, and nothing that compiles. The jobs this image is for need four things more:
+# buildx, and nothing that compiles. The jobs this image is for need five things more:
 #
 #   gcc, libc6-dev  go test -race needs cgo, and cgo needs a C compiler and the
 #                   libc headers. Without them -race fails with "cgo: C compiler
@@ -26,6 +26,10 @@ FROM ghcr.io/actions/actions-runner:2.338.0@sha256:4ffadc0002b2581327e06101fc8c0
 #                   zstd cache under the same key never match: without zstd,
 #                   hosted and self-hosted runners would miss each other's
 #                   caches both ways.
+#   gettext-base    for envsubst. The hosted image has it, and actions with shell
+#                   steps call it unchecked: sigstore/cosign-installer's first
+#                   line is `envsubst`, and without it the step ends with exit
+#                   code 127 before it installs anything.
 #
 # Nothing else goes into this stage. Every tool added here is present in every job of
 # every repository that runs on this image, for as long as it stays; a language runtime
@@ -34,7 +38,7 @@ FROM ghcr.io/actions/actions-runner:2.338.0@sha256:4ffadc0002b2581327e06101fc8c0
 USER root
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc libc6-dev make zstd \
+    && apt-get install -y --no-install-recommends gcc libc6-dev make zstd gettext-base \
     && rm -rf /var/lib/apt/lists/*
 
 # Numeric on purpose. Upstream ends with `USER runner`, and a pod with

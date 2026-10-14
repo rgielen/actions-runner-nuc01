@@ -11,12 +11,15 @@ id
 [ "$(id -g)" = 1001 ] || { echo "expected gid 1001, got $(id -g)" >&2; exit 1; }
 
 echo "== tools"
-for tool in gcc make zstd git jq curl; do
+for tool in gcc make zstd envsubst git jq curl; do
   command -v "$tool" >/dev/null || { echo "missing: $tool" >&2; exit 1; }
   printf '%-5s %s\n' "$tool" "$(command -v "$tool")"
 done
 gcc --version | head -1
 zstd --version
+# Substitutes, not just exists: what an action's shell step relies on.
+[ "$(printf '%s' '$FOO' | FOO=ok envsubst)" = ok ] || { echo "envsubst does not substitute" >&2; exit 1; }
+echo "envsubst ok"
 
 echo "== runner"
 cd /home/runner

@@ -14,10 +14,11 @@ Both are built from the same `FROM` line, as two targets of one
 
 ## What is in it
 
-`actions-runner-nuc01` is the upstream image plus `gcc`, `libc6-dev`, `make` and
-`zstd`: a C toolchain for cgo (`go test -race`), `make` for Makefile-driven
-steps, and `zstd` so that `actions/cache` uses the same compression as on
-GitHub-hosted runners. The user is numeric (`1001:1001`), so the image works
+`actions-runner-nuc01` is the upstream image plus `gcc`, `libc6-dev`, `make`,
+`zstd` and `gettext-base`: a C toolchain for cgo (`go test -race`), `make` for
+Makefile-driven steps, `zstd` so that `actions/cache` uses the same compression
+as on GitHub-hosted runners, and `envsubst`, which actions with shell steps
+(such as `sigstore/cosign-installer`) call as if it were always there. The user is numeric (`1001:1001`), so the image works
 under `runAsNonRoot`.
 
 `actions-runner-nuc01-docker` adds Oracle GraalVM 25 in the tool cache

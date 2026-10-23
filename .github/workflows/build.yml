@@ -30,7 +30,7 @@ permissions: {}
 jobs:
   build:
     name: build (${{ matrix.target }})
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     strategy:
       # One image failing its check must not hold back the other: each has GitHub's
       # 30-day runner version clock to keep on its own.
